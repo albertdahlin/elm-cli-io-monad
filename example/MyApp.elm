@@ -1,11 +1,12 @@
-module App exposing (..)
+module MyApp exposing (..)
 
 import IO exposing (IO)
+import Cli exposing (CliProgram)
 
 
-main : IO.CliProgram
+main : CliProgram
 main =
-    IO.run program
+    Cli.run program
 
 
 program : IO ()

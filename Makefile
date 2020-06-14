@@ -1,9 +1,11 @@
 
 
-all: dist dist/cli-wrapper.js
-	@elm make src/App.elm --output dist/app.js
+all: dist dist/app.js dist/cli-wrapper.js
 	@node dist/cli-wrapper.js
 
+
+dist/app.js: example/MyApp.elm
+	elm make $< --output $@
 
 dist/cli-wrapper.js: src/cli-wrapper.js
 	cp $< $@

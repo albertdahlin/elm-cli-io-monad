@@ -1,50 +1,38 @@
-port module IO exposing
-    ( CliProgram
-    , Env
-    , IO
-    , do
-    , readLine
-    , return
-    , run
-    , writeLn
+module IO exposing
+    ( IO, return, writeLn, readLine, do, exit
+    , Effect(..), Process, start, step
     )
+
+{-|
+
+
+# Write IO programs
+
+@docs IO, return, writeLn, readLine, do, exit
+
+# Run IO
+
+@docs Effect, Process, start, step
+
+-}
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
-import Task
 
 
-type alias CliProgram =
-    Program Env Model Msg
+type Effect
+    = WriteLn String
+    | ReadLine
+    | Exit
+    | NoOp
 
 
-port toJsLand : ToJs -> Cmd msg
-
-
-port fromJsLand : (Value -> msg) -> Sub msg
-
-
-type alias ToJs =
-    { fn : String
-    , args : List Value
-    }
-
-
-type alias Env =
-    { argv : List String
-    }
-
-
-type Msg
-    = GotNextValue Value
-
-
-type Model
-    = Model (Decoder ( Model, Cmd Msg ))
+type Process
+    = Process (Decoder ( Process, Effect ))
 
 
 type IO a
-    = IO ((a -> ( Model, Cmd Msg )) -> ( Model, Cmd Msg ))
+    = IO ((a -> ( Process, Effect )) -> ( Process, Effect ))
 
 
 do : IO a -> (a -> IO b) -> IO b
@@ -68,8 +56,8 @@ return a =
         (\next ->
             ( Decode.succeed a
                 |> Decode.map next
-                |> Model
-            , callSelf (GotNextValue Encode.null)
+                |> Process
+            , NoOp
             )
         )
 
@@ -80,8 +68,8 @@ readLine =
         (\next ->
             ( Decode.string
                 |> Decode.map next
-                |> Model
-            , toJsLand { fn = "readLine", args = [] }
+                |> Process
+            , ReadLine
             )
         )
 
@@ -92,56 +80,44 @@ writeLn str =
         (\next ->
             ( Decode.succeed ()
                 |> Decode.map next
-                |> Model
-            , toJsLand { fn = "writeLn", args = [ Encode.string str ] }
+                |> Process
+            , WriteLn str
             )
         )
 
 
-done : () -> ( Model, Cmd Msg )
-done _ =
-    ( Decode.fail "Exited"
-        |> Model
-    , toJsLand { fn = "exit", args = [] }
-    )
+exit : IO ()
+exit =
+    IO
+        (\_ ->
+            ( Decode.fail "Exited"
+                |> Process
+            , Exit
+            )
+        )
 
 
-init : IO () -> Env -> ( Model, Cmd Msg )
-init (IO io) env =
+step : Value -> Process -> ( Process, Effect )
+step value (Process decoder) =
+    case Decode.decodeValue decoder value of
+        Ok ( nextProcess, nextEffect ) ->
+            ( nextProcess
+            , nextEffect
+            )
+
+        Err err ->
+            ( Process decoder
+            , NoOp
+            )
+
+
+start : IO () -> ( Process, Effect )
+start (IO io) =
+    let
+        done _ =
+            ( Decode.fail "Exited"
+                |> Process
+            , Exit
+            )
+    in
     io done
-
-
-update : Msg -> Model -> ( Model, Cmd Msg )
-update msg ((Model decoder) as model) =
-    case msg of
-        GotNextValue value ->
-            case Decode.decodeValue decoder value of
-                Ok ( newModel, newCmd ) ->
-                    ( newModel
-                    , newCmd
-                    )
-
-                Err err ->
-                    ( model
-                    , Cmd.none
-                    )
-
-
-callSelf : Msg -> Cmd Msg
-callSelf msg =
-    Task.succeed msg
-        |> Task.perform identity
-
-
-subscriptions : Model -> Sub Msg
-subscriptions model =
-    fromJsLand GotNextValue
-
-
-run : IO () -> Program Env Model Msg
-run io =
-    Platform.worker
-        { init = init io
-        , update = update
-        , subscriptions = subscriptions
-        }

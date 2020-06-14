@@ -3,7 +3,7 @@ const { Elm } = require('./app.js');
 const readline = require('readline');
 
 
-const app = Elm.App.init({
+const app = Elm.MyApp.init({
     flags: {
         argv: process.argv
     }
