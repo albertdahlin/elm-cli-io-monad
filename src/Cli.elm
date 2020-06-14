@@ -50,7 +50,7 @@ effectToCmd : Effect -> Cmd Msg
 effectToCmd effect =
     case effect of
         WriteLn str ->
-            toJsLand { fn = "writeLn", args = [ Encode.string str ] }
+            toJsLand { fn = "writeLine", args = [ Encode.string str ] }
 
         ReadLine ->
             toJsLand { fn = "readLine", args = [] }

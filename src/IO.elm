@@ -1,5 +1,5 @@
 module IO exposing
-    ( IO, return, writeLn, readLine, do, exit
+    ( IO, return, writeLine, readLine, do, exit
     , Effect(..), Process, start, step
     )
 
@@ -8,7 +8,7 @@ module IO exposing
 
 # Write IO programs
 
-@docs IO, return, writeLn, readLine, do, exit
+@docs IO, return, writeLine, readLine, do, exit
 
 # Run IO
 
@@ -92,8 +92,8 @@ readLine =
 {-| Print a line to the console. A new line
 is added to the output.
 -}
-writeLn : String -> IO ()
-writeLn str =
+writeLine : String -> IO ()
+writeLine str =
     IO
         (\next ->
             ( Decode.succeed ()

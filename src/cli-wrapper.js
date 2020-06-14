@@ -17,7 +17,7 @@ let rl = readline.createInterface({
 
 app.ports.toJsLand.subscribe(function(msg) {
     switch (msg.fn) {
-        case 'writeLn':
+        case 'writeLine':
             rl.write(msg.args[0] + "\n");
             app.ports.fromJsLand.send({});
             break;
