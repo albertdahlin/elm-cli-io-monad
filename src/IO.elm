@@ -19,7 +19,8 @@ module IO exposing
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 
-
+{-| The effect that should be performed
+-}
 type Effect
     = WriteLn String
     | ReadLine
@@ -27,14 +28,23 @@ type Effect
     | NoOp
 
 
+{-| The "rest" of your IO monad program.
+-}
 type Process
     = Process (Decoder ( Process, Effect ))
 
 
+{-| This is the building blocks of a program.
+-}
 type IO a
     = IO ((a -> ( Process, Effect )) -> ( Process, Effect ))
 
 
+{-| Compose two IO "pieces" to one.
+
+This is the same concept as `andThen` but with
+the arguments flipped.
+-}
 do : IO a -> (a -> IO b) -> IO b
 do (IO fn) cont =
     IO
@@ -49,7 +59,11 @@ do (IO fn) cont =
                 )
         )
 
+{-| Wrap a value
 
+Same concept as `Decode.succeed`.
+
+-}
 return : a -> IO a
 return a =
     IO
@@ -62,6 +76,8 @@ return a =
         )
 
 
+{-| Read a line from the user.
+-}
 readLine : IO String
 readLine =
     IO
@@ -73,7 +89,9 @@ readLine =
             )
         )
 
-
+{-| Print a line to the console. A new line
+is added to the output.
+-}
 writeLn : String -> IO ()
 writeLn str =
     IO
@@ -85,7 +103,8 @@ writeLn str =
             )
         )
 
-
+{-| Exit the program.
+-}
 exit : IO ()
 exit =
     IO
@@ -97,6 +116,8 @@ exit =
         )
 
 
+{-| Step to the next instruction of your process.
+-}
 step : Value -> Process -> ( Process, Effect )
 step value (Process decoder) =
     case Decode.decodeValue decoder value of
@@ -111,6 +132,8 @@ step value (Process decoder) =
             )
 
 
+{-| Create a `Process` from an IO program.
+-}
 start : IO () -> ( Process, Effect )
 start (IO io) =
     let

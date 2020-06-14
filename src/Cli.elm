@@ -3,12 +3,20 @@ port module Cli exposing
     , run
     )
 
+{-|
+
+# Run as a CLI program
+
+@docs CliProgram, run
+
+-}
 import IO exposing (Effect(..), IO)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 import Task
 
-
+{-| Our Program
+-}
 type alias CliProgram =
     Program Env Model Msg
 
@@ -89,6 +97,8 @@ subscriptions model =
     fromJsLand GotNextValue
 
 
+{-| Create a `Platform.worker` program.
+-}
 run : IO () -> Program Env Model Msg
 run io =
     Platform.worker
